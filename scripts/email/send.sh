@@ -34,7 +34,7 @@ fi
 EMAIL_CONTENT=$(cat <<EOF
 From: ${FROM_EMAIL}
 To: ${RECIPIENT}
-Subject: Greetings from SplitDo
+Subject: 🎬 Video Rendering System Demo - Technical Achievement Showcase
 MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary="${BOUNDARY}"
 
@@ -52,9 +52,17 @@ Hello Ahmed Moti
 
 I hope you are doing well.
 
-This is a test message from SplitDo to verify our email delivery system is working correctly.
+I'm excited to share our latest technical achievement - a complete C-based video rendering system that demonstrates our engineering capabilities.
 
-Please look at the site updates so far: https://e4fd89d1.cloudflare-frontend-9xj.pages.dev/
+We've successfully developed a high-performance video generation pipeline using:
+- FFmpeg libraries for professional video encoding
+- Cairo graphics for smooth 2D rendering
+- SVG support for scalable vector graphics
+- Real-time frame-by-frame animation
+
+The attached MP4 showcases a smooth 5-second animation rendered at 1920x1080 resolution, demonstrating our ability to create dynamic visual content programmatically.
+
+This technology opens new possibilities for automated video generation, perfect for creating personalized content at scale.
 
 Kind regards,
 SplitDo Team
@@ -108,20 +116,35 @@ Content-Transfer-Encoding: 7bit
                                     <path d="M12 20 L18 26 L28 14" fill="none" stroke="#FF9B6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </div>
-                            <h2 style="margin: 0 0 25px 0; color: #5a4a42; font-size: 24px; font-weight: 600;">Hello Ahmed Moti</h2>
+                            <h2 style="margin: 0 0 25px 0; color: #5a4a42; font-size: 24px; font-weight: 600;">Video Rendering System Demo</h2>
 
                             <div style="clear: both;"></div>
 
                             <p style="margin: 0 0 20px 0; color: #555555; font-size: 16px; line-height: 1.6;">
-                                I hope you are doing well.
+                                Hello Ahmed Moti, I hope you are doing well.
                             </p>
 
                             <p style="margin: 0 0 20px 0; color: #555555; font-size: 16px; line-height: 1.6;">
-                                This is a test message from <strong>SplitDo</strong> to verify our email delivery system is working correctly.
+                                I'm excited to share our latest <strong>technical achievement</strong> - a complete C-based video rendering system that demonstrates our engineering capabilities.
+                            </p>
+
+                            <!-- Tech Stack Highlights -->
+                            <div style="background-color: #f8f9fa; border-left: 4px solid #FF9B6B; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px 0; color: #5a4a42; font-size: 18px; font-weight: 600;">🚀 Technology Stack</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #555555; font-size: 15px; line-height: 1.6;">
+                                    <li><strong>FFmpeg libraries</strong> for professional H.264 video encoding</li>
+                                    <li><strong>Cairo graphics</strong> for smooth 2D rendering</li>
+                                    <li><strong>SVG support</strong> for scalable vector graphics</li>
+                                    <li><strong>Real-time</strong> frame-by-frame animation</li>
+                                </ul>
+                            </div>
+
+                            <p style="margin: 0 0 20px 0; color: #555555; font-size: 16px; line-height: 1.6;">
+                                The attached <strong>MP4 video</strong> showcases a smooth 5-second animation rendered at <strong>1920×1080 resolution</strong>, demonstrating our ability to create dynamic visual content programmatically.
                             </p>
 
                             <p style="margin: 0 0 25px 0; color: #555555; font-size: 16px; line-height: 1.6;">
-                                Please look at the site updates so far:
+                                This technology opens new possibilities for <strong>automated video generation</strong>, perfect for creating personalized content at scale.
                             </p>
 
                             <!-- CTA Button -->
@@ -129,7 +152,7 @@ Content-Transfer-Encoding: 7bit
                                 <tr>
                                     <td style="border-radius: 8px; background: linear-gradient(135deg, #FF9B6B 0%, #6BBEBD 100%); text-align: center;">
                                         <a href="https://e4fd89d1.cloudflare-frontend-9xj.pages.dev/" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
-                                            View Site Updates
+                                            View Our Platform
                                         </a>
                                     </td>
                                 </tr>
@@ -232,6 +255,13 @@ Content-Disposition: inline; filename="logo.webp"
 $(base64 "$LOGO_PATH")
 
 --${BOUNDARY_REL}--
+
+--${BOUNDARY}
+Content-Type: video/mp4
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="video_demo.mp4"
+
+$(base64 "output.mp4")
 
 --${BOUNDARY}--
 EOF
