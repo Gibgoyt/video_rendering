@@ -162,75 +162,109 @@ void encoder_finish(VideoEncoder *enc) {
     avformat_free_context(enc->fmt_ctx);
 }
 
-char* generate_svg(int x_position, float rot_x, float rot_z) {
-    char *svg = malloc(4096);
+void draw_rounded_rectangle(cairo_t *cr, double x, double y, double width, double height, double radius) {
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + radius, y + radius, radius, M_PI, 3 * M_PI / 2);
+    cairo_arc(cr, x + width - radius, y + radius, radius, 3 * M_PI / 2, 0);
+    cairo_arc(cr, x + width - radius, y + height - radius, radius, 0, M_PI / 2);
+    cairo_arc(cr, x + radius, y + height - radius, radius, M_PI / 2, M_PI);
+    cairo_close_path(cr);
+}
+
+cairo_surface_t* draw_phone_to_surface(int x_pos, float rot_x, float rot_z) {
     int phone_width = 340;
     int phone_height = 680;
     int y_center = (HEIGHT - phone_height) / 2;
     
-    // Calculate 3D effect simulation
-    float scale_y = fabs(cos(rot_x * M_PI / 180.0));  // Simulate X-axis rotation with Y scaling
-    if (scale_y < 0.1) scale_y = 0.1;  // Prevent complete flattening
-    
-    snprintf(svg, 4096,
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<svg width=\"%d\" height=\"%d\" xmlns=\"http://www.w3.org/2000/svg\">"
-        "<g transform=\"translate(%d,%d) rotate(%.1f,170,340) scale(1,%.3f)\">"
-        "<rect x=\"0\" y=\"0\" width=\"340\" height=\"680\" rx=\"50\" fill=\"#2D3748\"/>"
-        "<rect x=\"4\" y=\"4\" width=\"332\" height=\"672\" rx=\"46\" fill=\"#3A4556\"/>"
-        "<g>"
-        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"#1A202C\"/>"
-        "<mask id=\"screen-mask\">"
-        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"white\"/>"
-        "<path d=\"M 135 12 Q 135 32, 152 32 L 188 32 Q 205 32, 205 12 Z\" fill=\"black\"/>"
-        "</mask>"
-        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"transparent\" mask=\"url(#screen-mask)\"/>"
-        "</g>"
-        "<g>"
-        "<path d=\"M 135 12 Q 135 36, 152 36 L 188 36 Q 205 36, 205 12 L 205 0 L 135 0 Z\" fill=\"#2D3748\"/>"
-        "<path d=\"M 138 12 Q 138 33, 153 33 L 187 33 Q 202 33, 202 12 L 202 8 L 138 8 Z\" fill=\"#1A1F2E\"/>"
-        "<rect x=\"155\" y=\"18\" width=\"30\" height=\"4\" rx=\"2\" fill=\"#0F1419\"/>"
-        "<circle cx=\"180\" cy=\"20\" r=\"4.5\" fill=\"#0F1419\"/>"
-        "<circle cx=\"180\" cy=\"20\" r=\"2.5\" fill=\"#1E293B\"/>"
-        "</g>"
-        "<rect x=\"335\" y=\"150\" width=\"5\" height=\"60\" rx=\"2.5\" fill=\"#1A202C\"/>"
-        "<rect x=\"0\" y=\"120\" width=\"5\" height=\"45\" rx=\"2.5\" fill=\"#1A202C\"/>"
-        "<rect x=\"0\" y=\"175\" width=\"5\" height=\"45\" rx=\"2.5\" fill=\"#1A202C\"/>"
-        "<rect x=\"0\" y=\"80\" width=\"5\" height=\"25\" rx=\"2.5\" fill=\"#1A202C\"/>"
-        "</g>"
-        "</svg>",
-        WIDTH, HEIGHT, x_position, y_center, rot_z, scale_y
-    );
-    return svg;
-}
-
-cairo_surface_t* render_svg_to_surface(const char *svg_data) {
-    GError *error = NULL;
-    
+    // Create Cairo surface
     cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     cairo_t *cr = cairo_create(surface);
     
+    // Fill with white background
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
     cairo_paint(cr);
     
-    RsvgHandle *handle = rsvg_handle_new_from_data((const guint8*)svg_data, strlen(svg_data), &error);
-    if (error != NULL) {
-        fprintf(stderr, "Error loading SVG: %s\n", error->message);
-        g_error_free(error);
-        cairo_destroy(cr);
-        cairo_surface_destroy(surface);
-        return NULL;
-    }
+    // Apply 3D transformations
+    cairo_save(cr);
     
-    rsvg_handle_render_cairo(handle, cr);
+    // Move to phone center for rotation
+    cairo_translate(cr, x_pos + phone_width/2, y_center + phone_height/2);
     
-    g_object_unref(handle);
+    // Apply Z-axis rotation (spinning)
+    cairo_rotate(cr, rot_z * M_PI / 180.0);
+    
+    // Apply X-axis rotation simulation (flipping effect with Y scaling)
+    float scale_y = fabs(cos(rot_x * M_PI / 180.0));
+    if (scale_y < 0.1) scale_y = 0.1;  // Prevent complete flattening
+    cairo_scale(cr, 1.0, scale_y);
+    
+    // Move back to draw from top-left
+    cairo_translate(cr, -phone_width/2, -phone_height/2);
+    
+    // Draw phone outer frame
+    cairo_set_source_rgb(cr, 0.176, 0.216, 0.282);  // #2D3748
+    draw_rounded_rectangle(cr, 0, 0, 340, 680, 50);
+    cairo_fill(cr);
+    
+    // Draw inner lighter border
+    cairo_set_source_rgb(cr, 0.227, 0.271, 0.337);  // #3A4556
+    draw_rounded_rectangle(cr, 4, 4, 332, 672, 46);
+    cairo_fill(cr);
+    
+    // Draw main screen background
+    cairo_set_source_rgb(cr, 0.102, 0.125, 0.173);  // #1A202C
+    draw_rounded_rectangle(cr, 12, 12, 316, 656, 42);
+    cairo_fill(cr);
+    
+    // Draw notch cutout (simplified as rectangle)
+    cairo_set_source_rgb(cr, 0.176, 0.216, 0.282);  // #2D3748 - same as outer frame
+    draw_rounded_rectangle(cr, 135, 0, 70, 36, 18);
+    cairo_fill(cr);
+    
+    // Draw notch inner dark area
+    cairo_set_source_rgb(cr, 0.102, 0.122, 0.180);  // #1A1F2E
+    draw_rounded_rectangle(cr, 138, 8, 64, 25, 16);
+    cairo_fill(cr);
+    
+    // Draw speaker grille
+    cairo_set_source_rgb(cr, 0.059, 0.078, 0.098);  // #0F1419
+    draw_rounded_rectangle(cr, 155, 18, 30, 4, 2);
+    cairo_fill(cr);
+    
+    // Draw front camera (outer)
+    cairo_set_source_rgb(cr, 0.059, 0.078, 0.098);  // #0F1419
+    cairo_arc(cr, 180, 20, 4.5, 0, 2 * M_PI);
+    cairo_fill(cr);
+    
+    // Draw front camera (inner)
+    cairo_set_source_rgb(cr, 0.118, 0.161, 0.231);  // #1E293B
+    cairo_arc(cr, 180, 20, 2.5, 0, 2 * M_PI);
+    cairo_fill(cr);
+    
+    // Draw power button (right side)
+    cairo_set_source_rgb(cr, 0.102, 0.125, 0.173);  // #1A202C
+    draw_rounded_rectangle(cr, 335, 150, 5, 60, 2.5);
+    cairo_fill(cr);
+    
+    // Draw volume buttons (left side)
+    draw_rounded_rectangle(cr, 0, 120, 5, 45, 2.5);
+    cairo_fill(cr);
+    draw_rounded_rectangle(cr, 0, 175, 5, 45, 2.5);
+    cairo_fill(cr);
+    
+    // Draw silent switch (left side)
+    draw_rounded_rectangle(cr, 0, 80, 5, 25, 2.5);
+    cairo_fill(cr);
+    
+    cairo_restore(cr);
     cairo_destroy(cr);
     
+    // Flush to ensure all drawing is done
     cairo_surface_flush(surface);
     
     return surface;
 }
+
 
 int main() {
     VideoEncoder encoder;
@@ -251,10 +285,7 @@ int main() {
         float rot_x = progress * 360.0f;
         float rot_z = progress * 360.0f;
         
-        char *svg_data = generate_svg(x_pos, rot_x, rot_z);
-        
-        cairo_surface_t *surface = render_svg_to_surface(svg_data);
-        free(svg_data);
+        cairo_surface_t *surface = draw_phone_to_surface(x_pos, rot_x, rot_z);
         
         if (!surface) {
             fprintf(stderr, "Failed to render SVG for frame %d\n", frame);

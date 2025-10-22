@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -O2 -Iinclude $(shell pkg-config --cflags librsvg-2.0 cairo libavcodec libavformat libavutil libswscale)
-LDFLAGS = $(shell pkg-config --libs librsvg-2.0 cairo libavcodec libavformat libavutil libswscale) -lm
+CFLAGS = -Wall -O2 -Iinclude $(shell pkg-config --cflags cairo libavcodec libavformat libavutil libswscale)
+LDFLAGS = $(shell pkg-config --libs cairo libavcodec libavformat libavutil libswscale) -lm
 
 TARGET = video_renderer
 SRCDIR = src
