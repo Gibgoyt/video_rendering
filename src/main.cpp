@@ -290,145 +290,77 @@ struct Phone {
     std::vector<std::vector<int>> faces;
     std::vector<Color> faceColors;
     
-    Phone(float width = 1.5f, float height = 3.0f, float thickness = 0.3f) {
-        float w = width / 2.0f;   // Half width
-        float h = height / 2.0f;  // Half height  
+    Phone(float width = 1.0f, float height = 2.0f, float thickness = 0.15f) {
+        // Simple iPhone-like proportions (1:2 ratio like the SVG)
+        float w = width / 2.0f;   // Half width  
+        float h = height / 2.0f;  // Half height
         float t = thickness / 2.0f; // Half thickness
         
-        // Base phone body vertices (rectangular prism)
-        // Front face (screen side)
+        // Colors matching the SVG exactly
+        Color frameColor(45, 55, 72);        // #2D3748 - Phone frame
+        Color screenColor(26, 32, 44);       // #1A202C - Screen area
+        Color edgeColor(74, 85, 104);        // Edges/sides
+        Color cameraColor(113, 128, 150);    // Camera
+        
+        vertices.clear();
+        faces.clear();
+        faceColors.clear();
+        
+        // Create a simple rectangular phone (8 vertices for a box)
+        // Front face vertices (screen side - Z = +t)
         vertices.push_back(Vec3(-w, -h, t));  // 0: bottom-left front
         vertices.push_back(Vec3( w, -h, t));  // 1: bottom-right front
         vertices.push_back(Vec3( w,  h, t));  // 2: top-right front
         vertices.push_back(Vec3(-w,  h, t));  // 3: top-left front
         
-        // Back face
+        // Back face vertices (Z = -t)
         vertices.push_back(Vec3(-w, -h, -t)); // 4: bottom-left back
         vertices.push_back(Vec3( w, -h, -t)); // 5: bottom-right back
         vertices.push_back(Vec3( w,  h, -t)); // 6: top-right back
         vertices.push_back(Vec3(-w,  h, -t)); // 7: top-left back
         
-        // Add rounded edge vertices for more realistic look
-        float bevel = 0.08f; // Bevel size for rounded edges
+        // Define the 6 faces of the rectangular phone (12 triangles total)
         
-        // Front beveled edges (8-15)
-        vertices.push_back(Vec3(-w + bevel, -h, t));     // 8: bottom bevel front
-        vertices.push_back(Vec3( w - bevel, -h, t));     // 9
-        vertices.push_back(Vec3( w, -h + bevel, t));     // 10: right bevel front
-        vertices.push_back(Vec3( w,  h - bevel, t));     // 11
-        vertices.push_back(Vec3( w - bevel,  h, t));     // 12: top bevel front
-        vertices.push_back(Vec3(-w + bevel,  h, t));     // 13
-        vertices.push_back(Vec3(-w,  h - bevel, t));     // 14: left bevel front
-        vertices.push_back(Vec3(-w, -h + bevel, t));     // 15
+        // Front face (screen) - 2 triangles
+        faces.push_back({0, 1, 2}); faceColors.push_back(screenColor);
+        faces.push_back({0, 2, 3}); faceColors.push_back(screenColor);
         
-        // Back beveled edges (16-23)
-        vertices.push_back(Vec3(-w + bevel, -h, -t));    // 16: bottom bevel back
-        vertices.push_back(Vec3( w - bevel, -h, -t));    // 17
-        vertices.push_back(Vec3( w, -h + bevel, -t));    // 18: right bevel back
-        vertices.push_back(Vec3( w,  h - bevel, -t));    // 19
-        vertices.push_back(Vec3( w - bevel,  h, -t));    // 20: top bevel back
-        vertices.push_back(Vec3(-w + bevel,  h, -t));    // 21
-        vertices.push_back(Vec3(-w,  h - bevel, -t));    // 22: left bevel back
-        vertices.push_back(Vec3(-w, -h + bevel, -t));    // 23
+        // Back face - 2 triangles (note: reverse winding for outward normal)
+        faces.push_back({4, 6, 5}); faceColors.push_back(frameColor);
+        faces.push_back({4, 7, 6}); faceColors.push_back(frameColor);
         
-        // Camera bump vertices (cylinder on back face)
-        float cam_x = w - 0.4f;    // Camera X position (right side)
-        float cam_y = h - 0.4f;    // Camera Y position (top)
-        float cam_r = 0.15f;       // Camera radius
-        float cam_h = 0.08f;       // Camera height (protrusion)
+        // Bottom face - 2 triangles
+        faces.push_back({0, 4, 5}); faceColors.push_back(edgeColor);
+        faces.push_back({0, 5, 1}); faceColors.push_back(edgeColor);
         
-        // Camera cylinder vertices (24-31)
-        int cam_segments = 8;
-        for (int i = 0; i < cam_segments; i++) {
-            float angle = (float)i / cam_segments * 2.0f * PI;
-            float x = cam_x + cam_r * std::cos(angle);
-            float y = cam_y + cam_r * std::sin(angle);
-            vertices.push_back(Vec3(x, y, -t - cam_h));  // Camera outer ring
-        }
+        // Top face - 2 triangles
+        faces.push_back({2, 6, 7}); faceColors.push_back(edgeColor);
+        faces.push_back({2, 7, 3}); faceColors.push_back(edgeColor);
         
-        // Camera center vertices
-        vertices.push_back(Vec3(cam_x, cam_y, -t));      // 32: Camera center back
-        vertices.push_back(Vec3(cam_x, cam_y, -t - cam_h)); // 33: Camera center front
+        // Left face - 2 triangles
+        faces.push_back({0, 3, 7}); faceColors.push_back(edgeColor);
+        faces.push_back({0, 7, 4}); faceColors.push_back(edgeColor);
         
-        // Define faces for phone body
-        faces.clear();
-        faceColors.clear();
+        // Right face - 2 triangles
+        faces.push_back({1, 5, 6}); faceColors.push_back(edgeColor);
+        faces.push_back({1, 6, 2}); faceColors.push_back(edgeColor);
         
-        // Front face (screen) - dark blue/black
-        Color screenColor(26, 32, 44);      // Dark screen
-        Color bodyColor(45, 55, 72);        // Phone body
-        Color edgeColor(74, 85, 104);       // Lighter edges
-        Color cameraColor(113, 128, 150);   // Camera ring
-        Color lensColor(45, 55, 72);        // Camera lens
+        // Add small camera bump on back
+        float camX = w * 0.7f;      // Position on back
+        float camY = h * 0.7f;
+        float camSize = 0.08f;
+        float camHeight = 0.03f;
         
-        // Main front face (screen area) - using beveled vertices for rounded look
-        faces.push_back({8, 9, 12}); faceColors.push_back(screenColor);
-        faces.push_back({8, 12, 13}); faceColors.push_back(screenColor);
-        faces.push_back({9, 10, 11}); faceColors.push_back(screenColor);
-        faces.push_back({9, 11, 12}); faceColors.push_back(screenColor);
-        faces.push_back({13, 12, 11}); faceColors.push_back(screenColor);
-        faces.push_back({13, 11, 14}); faceColors.push_back(screenColor);
-        faces.push_back({15, 8, 13}); faceColors.push_back(screenColor);
-        faces.push_back({15, 13, 14}); faceColors.push_back(screenColor);
+        // Camera vertices (simple square bump)
+        int camBase = vertices.size();
+        vertices.push_back(Vec3(camX - camSize, camY - camSize, -t - camHeight)); // 8
+        vertices.push_back(Vec3(camX + camSize, camY - camSize, -t - camHeight)); // 9
+        vertices.push_back(Vec3(camX + camSize, camY + camSize, -t - camHeight)); // 10
+        vertices.push_back(Vec3(camX - camSize, camY + camSize, -t - camHeight)); // 11
         
-        // Back face (main body)
-        faces.push_back({16, 20, 17}); faceColors.push_back(bodyColor);
-        faces.push_back({17, 20, 21}); faceColors.push_back(bodyColor);
-        faces.push_back({17, 21, 18}); faceColors.push_back(bodyColor);
-        faces.push_back({18, 21, 19}); faceColors.push_back(bodyColor);
-        faces.push_back({21, 22, 19}); faceColors.push_back(bodyColor);
-        faces.push_back({23, 16, 21}); faceColors.push_back(bodyColor);
-        faces.push_back({23, 21, 22}); faceColors.push_back(bodyColor);
-        faces.push_back({16, 17, 21}); faceColors.push_back(bodyColor);
-        
-        // Side faces (edges with thickness)
-        // Bottom edge
-        faces.push_back({8, 16, 17}); faceColors.push_back(edgeColor);
-        faces.push_back({8, 17, 9}); faceColors.push_back(edgeColor);
-        
-        // Right edge  
-        faces.push_back({10, 9, 17}); faceColors.push_back(edgeColor);
-        faces.push_back({10, 17, 18}); faceColors.push_back(edgeColor);
-        faces.push_back({11, 10, 18}); faceColors.push_back(edgeColor);
-        faces.push_back({11, 18, 19}); faceColors.push_back(edgeColor);
-        
-        // Top edge
-        faces.push_back({12, 11, 19}); faceColors.push_back(edgeColor);
-        faces.push_back({12, 19, 20}); faceColors.push_back(edgeColor);
-        faces.push_back({13, 12, 20}); faceColors.push_back(edgeColor);
-        faces.push_back({13, 20, 21}); faceColors.push_back(edgeColor);
-        
-        // Left edge
-        faces.push_back({14, 13, 21}); faceColors.push_back(edgeColor);
-        faces.push_back({14, 21, 22}); faceColors.push_back(edgeColor);
-        faces.push_back({15, 14, 22}); faceColors.push_back(edgeColor);
-        faces.push_back({15, 22, 23}); faceColors.push_back(edgeColor);
-        faces.push_back({8, 15, 23}); faceColors.push_back(edgeColor);
-        faces.push_back({8, 23, 16}); faceColors.push_back(edgeColor);
-        
-        // Camera bump faces
-        // Camera ring (cylinder sides)
-        for (int i = 0; i < cam_segments; i++) {
-            int next = (i + 1) % cam_segments;
-            int v1 = 24 + i;
-            int v2 = 24 + next;
-            
-            // Ring to back face
-            faces.push_back({32, v1, v2}); faceColors.push_back(cameraColor);
-            
-            // Ring sides (cylinder)
-            faces.push_back({v1, 33, v2}); faceColors.push_back(cameraColor);
-        }
-        
-        // Camera lens (front face)
-        faces.push_back({33, 24, 25}); faceColors.push_back(lensColor);
-        faces.push_back({33, 25, 26}); faceColors.push_back(lensColor);
-        faces.push_back({33, 26, 27}); faceColors.push_back(lensColor);
-        faces.push_back({33, 27, 28}); faceColors.push_back(lensColor);
-        faces.push_back({33, 28, 29}); faceColors.push_back(lensColor);
-        faces.push_back({33, 29, 30}); faceColors.push_back(lensColor);
-        faces.push_back({33, 30, 31}); faceColors.push_back(lensColor);
-        faces.push_back({33, 31, 24}); faceColors.push_back(lensColor);
+        // Camera faces (just the front face of the bump)
+        faces.push_back({camBase, camBase + 1, camBase + 2}); faceColors.push_back(cameraColor);
+        faces.push_back({camBase, camBase + 2, camBase + 3}); faceColors.push_back(cameraColor);
     }
     
     void render(Renderer& renderer, const Mat4& modelMatrix, bool wireframe = false) {
@@ -584,7 +516,7 @@ int main() {
     
     Framebuffer framebuffer(WIDTH, HEIGHT);
     Renderer renderer(framebuffer);
-    Phone phone(1.2f, 2.4f, 0.25f);  // Width, Height, Thickness
+    Phone phone(1.0f, 2.0f, 0.15f);  // Width, Height, Thickness - iPhone proportions
     VideoEncoder encoder;
     
     if (!encoder.init("output_3d.mp4")) {
