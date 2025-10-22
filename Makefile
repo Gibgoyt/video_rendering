@@ -1,18 +1,18 @@
-CC = gcc
-CFLAGS = -Wall -O2 -Iinclude $(shell pkg-config --cflags cairo libavcodec libavformat libavutil libswscale)
-LDFLAGS = $(shell pkg-config --libs cairo libavcodec libavformat libavutil libswscale) -lm
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -O2 -Iinclude $(shell pkg-config --cflags libavcodec libavformat libavutil libswscale)
+LDFLAGS = $(shell pkg-config --libs libavcodec libavformat libavutil libswscale) -lm
 
 TARGET = video_renderer
 SRCDIR = src
-SOURCES = $(SRCDIR)/main.c
+SOURCES = $(SRCDIR)/main.cpp
 
 all: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
 
 clean:
-	rm -f $(TARGET) output.mp4
+	rm -f $(TARGET) output.mp4 output_3d.mp4
 
 run: $(TARGET)
 	./$(TARGET)

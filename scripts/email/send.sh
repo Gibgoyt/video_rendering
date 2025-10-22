@@ -297,7 +297,7 @@ Content-Type: video/mp4
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="video_demo.mp4"
 
-$(base64 "output.mp4")
+$(base64 "output_3d.mp4")
 
 --${BOUNDARY}--
 EOF
