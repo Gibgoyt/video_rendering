@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <librsvg/rsvg.h>
 #include <cairo/cairo.h>
 #include <libavcodec/avcodec.h>
@@ -31,7 +32,7 @@ typedef struct {
 int encoder_init(VideoEncoder *enc, const char *filename);
 int encoder_write_frame(VideoEncoder *enc, cairo_surface_t *surface);
 void encoder_finish(VideoEncoder *enc);
-char* generate_svg(int x_position);
+char* generate_svg(int x_position, float rot_x, float rot_z);
 cairo_surface_t* render_svg_to_surface(const char *svg_data);
 
 #endif

@@ -162,14 +162,44 @@ void encoder_finish(VideoEncoder *enc) {
     avformat_free_context(enc->fmt_ctx);
 }
 
-char* generate_svg(int x_position) {
-    char *svg = malloc(1024);
-    snprintf(svg, 1024,
+char* generate_svg(int x_position, float rot_x, float rot_z) {
+    char *svg = malloc(4096);
+    int phone_width = 340;
+    int phone_height = 680;
+    int y_center = (HEIGHT - phone_height) / 2;
+    
+    // Calculate 3D effect simulation
+    float scale_y = fabs(cos(rot_x * M_PI / 180.0));  // Simulate X-axis rotation with Y scaling
+    if (scale_y < 0.1) scale_y = 0.1;  // Prevent complete flattening
+    
+    snprintf(svg, 4096,
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<svg width=\"%d\" height=\"%d\" xmlns=\"http://www.w3.org/2000/svg\">"
-        "<rect x=\"%d\" y=\"490\" width=\"200\" height=\"100\" fill=\"#3498db\" rx=\"10\"/>"
+        "<g transform=\"translate(%d,%d) rotate(%.1f,170,340) scale(1,%.3f)\">"
+        "<rect x=\"0\" y=\"0\" width=\"340\" height=\"680\" rx=\"50\" fill=\"#2D3748\"/>"
+        "<rect x=\"4\" y=\"4\" width=\"332\" height=\"672\" rx=\"46\" fill=\"#3A4556\"/>"
+        "<g>"
+        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"#1A202C\"/>"
+        "<mask id=\"screen-mask\">"
+        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"white\"/>"
+        "<path d=\"M 135 12 Q 135 32, 152 32 L 188 32 Q 205 32, 205 12 Z\" fill=\"black\"/>"
+        "</mask>"
+        "<rect x=\"12\" y=\"12\" width=\"316\" height=\"656\" rx=\"42\" fill=\"transparent\" mask=\"url(#screen-mask)\"/>"
+        "</g>"
+        "<g>"
+        "<path d=\"M 135 12 Q 135 36, 152 36 L 188 36 Q 205 36, 205 12 L 205 0 L 135 0 Z\" fill=\"#2D3748\"/>"
+        "<path d=\"M 138 12 Q 138 33, 153 33 L 187 33 Q 202 33, 202 12 L 202 8 L 138 8 Z\" fill=\"#1A1F2E\"/>"
+        "<rect x=\"155\" y=\"18\" width=\"30\" height=\"4\" rx=\"2\" fill=\"#0F1419\"/>"
+        "<circle cx=\"180\" cy=\"20\" r=\"4.5\" fill=\"#0F1419\"/>"
+        "<circle cx=\"180\" cy=\"20\" r=\"2.5\" fill=\"#1E293B\"/>"
+        "</g>"
+        "<rect x=\"335\" y=\"150\" width=\"5\" height=\"60\" rx=\"2.5\" fill=\"#1A202C\"/>"
+        "<rect x=\"0\" y=\"120\" width=\"5\" height=\"45\" rx=\"2.5\" fill=\"#1A202C\"/>"
+        "<rect x=\"0\" y=\"175\" width=\"5\" height=\"45\" rx=\"2.5\" fill=\"#1A202C\"/>"
+        "<rect x=\"0\" y=\"80\" width=\"5\" height=\"25\" rx=\"2.5\" fill=\"#1A202C\"/>"
+        "</g>"
         "</svg>",
-        WIDTH, HEIGHT, x_position
+        WIDTH, HEIGHT, x_position, y_center, rot_z, scale_y
     );
     return svg;
 }
@@ -214,9 +244,14 @@ int main() {
     printf("Rendering frames...\n");
     
     for (int frame = 0; frame < TOTAL_FRAMES; frame++) {
-        int x_pos = (int)((float)frame / TOTAL_FRAMES * (WIDTH - 200));
+        int phone_width = 340;
+        int x_pos = (int)((float)frame / TOTAL_FRAMES * (WIDTH - phone_width));
         
-        char *svg_data = generate_svg(x_pos);
+        float progress = (float)frame / TOTAL_FRAMES;
+        float rot_x = progress * 360.0f;
+        float rot_z = progress * 360.0f;
+        
+        char *svg_data = generate_svg(x_pos, rot_x, rot_z);
         
         cairo_surface_t *surface = render_svg_to_surface(svg_data);
         free(svg_data);
