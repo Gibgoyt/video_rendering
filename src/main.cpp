@@ -282,42 +282,153 @@ public:
 };
 
 // ============================================================================
-// Cube Definition
+// Phone Definition
 // ============================================================================
 
-struct Cube {
+struct Phone {
     std::vector<Vec3> vertices;
     std::vector<std::vector<int>> faces;
     std::vector<Color> faceColors;
     
-    Cube(float size = 1.0f) {
-        float h = size / 2.0f;
+    Phone(float width = 1.5f, float height = 3.0f, float thickness = 0.3f) {
+        float w = width / 2.0f;   // Half width
+        float h = height / 2.0f;  // Half height  
+        float t = thickness / 2.0f; // Half thickness
         
-        // 8 vertices of cube
-        vertices = {
-            Vec3(-h, -h, -h), Vec3( h, -h, -h), Vec3( h,  h, -h), Vec3(-h,  h, -h),
-            Vec3(-h, -h,  h), Vec3( h, -h,  h), Vec3( h,  h,  h), Vec3(-h,  h,  h)
-        };
+        // Base phone body vertices (rectangular prism)
+        // Front face (screen side)
+        vertices.push_back(Vec3(-w, -h, t));  // 0: bottom-left front
+        vertices.push_back(Vec3( w, -h, t));  // 1: bottom-right front
+        vertices.push_back(Vec3( w,  h, t));  // 2: top-right front
+        vertices.push_back(Vec3(-w,  h, t));  // 3: top-left front
         
-        // 6 faces (2 triangles each)
-        faces = {
-            {0, 1, 2}, {0, 2, 3}, // Front
-            {1, 5, 6}, {1, 6, 2}, // Right
-            {5, 4, 7}, {5, 7, 6}, // Back
-            {4, 0, 3}, {4, 3, 7}, // Left
-            {3, 2, 6}, {3, 6, 7}, // Top
-            {4, 5, 1}, {4, 1, 0}  // Bottom
-        };
+        // Back face
+        vertices.push_back(Vec3(-w, -h, -t)); // 4: bottom-left back
+        vertices.push_back(Vec3( w, -h, -t)); // 5: bottom-right back
+        vertices.push_back(Vec3( w,  h, -t)); // 6: top-right back
+        vertices.push_back(Vec3(-w,  h, -t)); // 7: top-left back
         
-        // Colors for each face pair
-        faceColors = {
-            Color(231, 76, 60),  Color(231, 76, 60),   // Red
-            Color(52, 152, 219), Color(52, 152, 219),  // Blue
-            Color(46, 204, 113), Color(46, 204, 113),  // Green
-            Color(241, 196, 15), Color(241, 196, 15),  // Yellow
-            Color(155, 89, 182), Color(155, 89, 182),  // Purple
-            Color(230, 126, 34), Color(230, 126, 34)   // Orange
-        };
+        // Add rounded edge vertices for more realistic look
+        float bevel = 0.08f; // Bevel size for rounded edges
+        
+        // Front beveled edges (8-15)
+        vertices.push_back(Vec3(-w + bevel, -h, t));     // 8: bottom bevel front
+        vertices.push_back(Vec3( w - bevel, -h, t));     // 9
+        vertices.push_back(Vec3( w, -h + bevel, t));     // 10: right bevel front
+        vertices.push_back(Vec3( w,  h - bevel, t));     // 11
+        vertices.push_back(Vec3( w - bevel,  h, t));     // 12: top bevel front
+        vertices.push_back(Vec3(-w + bevel,  h, t));     // 13
+        vertices.push_back(Vec3(-w,  h - bevel, t));     // 14: left bevel front
+        vertices.push_back(Vec3(-w, -h + bevel, t));     // 15
+        
+        // Back beveled edges (16-23)
+        vertices.push_back(Vec3(-w + bevel, -h, -t));    // 16: bottom bevel back
+        vertices.push_back(Vec3( w - bevel, -h, -t));    // 17
+        vertices.push_back(Vec3( w, -h + bevel, -t));    // 18: right bevel back
+        vertices.push_back(Vec3( w,  h - bevel, -t));    // 19
+        vertices.push_back(Vec3( w - bevel,  h, -t));    // 20: top bevel back
+        vertices.push_back(Vec3(-w + bevel,  h, -t));    // 21
+        vertices.push_back(Vec3(-w,  h - bevel, -t));    // 22: left bevel back
+        vertices.push_back(Vec3(-w, -h + bevel, -t));    // 23
+        
+        // Camera bump vertices (cylinder on back face)
+        float cam_x = w - 0.4f;    // Camera X position (right side)
+        float cam_y = h - 0.4f;    // Camera Y position (top)
+        float cam_r = 0.15f;       // Camera radius
+        float cam_h = 0.08f;       // Camera height (protrusion)
+        
+        // Camera cylinder vertices (24-31)
+        int cam_segments = 8;
+        for (int i = 0; i < cam_segments; i++) {
+            float angle = (float)i / cam_segments * 2.0f * PI;
+            float x = cam_x + cam_r * std::cos(angle);
+            float y = cam_y + cam_r * std::sin(angle);
+            vertices.push_back(Vec3(x, y, -t - cam_h));  // Camera outer ring
+        }
+        
+        // Camera center vertices
+        vertices.push_back(Vec3(cam_x, cam_y, -t));      // 32: Camera center back
+        vertices.push_back(Vec3(cam_x, cam_y, -t - cam_h)); // 33: Camera center front
+        
+        // Define faces for phone body
+        faces.clear();
+        faceColors.clear();
+        
+        // Front face (screen) - dark blue/black
+        Color screenColor(26, 32, 44);      // Dark screen
+        Color bodyColor(45, 55, 72);        // Phone body
+        Color edgeColor(74, 85, 104);       // Lighter edges
+        Color cameraColor(113, 128, 150);   // Camera ring
+        Color lensColor(45, 55, 72);        // Camera lens
+        
+        // Main front face (screen area) - using beveled vertices for rounded look
+        faces.push_back({8, 9, 12}); faceColors.push_back(screenColor);
+        faces.push_back({8, 12, 13}); faceColors.push_back(screenColor);
+        faces.push_back({9, 10, 11}); faceColors.push_back(screenColor);
+        faces.push_back({9, 11, 12}); faceColors.push_back(screenColor);
+        faces.push_back({13, 12, 11}); faceColors.push_back(screenColor);
+        faces.push_back({13, 11, 14}); faceColors.push_back(screenColor);
+        faces.push_back({15, 8, 13}); faceColors.push_back(screenColor);
+        faces.push_back({15, 13, 14}); faceColors.push_back(screenColor);
+        
+        // Back face (main body)
+        faces.push_back({16, 20, 17}); faceColors.push_back(bodyColor);
+        faces.push_back({17, 20, 21}); faceColors.push_back(bodyColor);
+        faces.push_back({17, 21, 18}); faceColors.push_back(bodyColor);
+        faces.push_back({18, 21, 19}); faceColors.push_back(bodyColor);
+        faces.push_back({21, 22, 19}); faceColors.push_back(bodyColor);
+        faces.push_back({23, 16, 21}); faceColors.push_back(bodyColor);
+        faces.push_back({23, 21, 22}); faceColors.push_back(bodyColor);
+        faces.push_back({16, 17, 21}); faceColors.push_back(bodyColor);
+        
+        // Side faces (edges with thickness)
+        // Bottom edge
+        faces.push_back({8, 16, 17}); faceColors.push_back(edgeColor);
+        faces.push_back({8, 17, 9}); faceColors.push_back(edgeColor);
+        
+        // Right edge  
+        faces.push_back({10, 9, 17}); faceColors.push_back(edgeColor);
+        faces.push_back({10, 17, 18}); faceColors.push_back(edgeColor);
+        faces.push_back({11, 10, 18}); faceColors.push_back(edgeColor);
+        faces.push_back({11, 18, 19}); faceColors.push_back(edgeColor);
+        
+        // Top edge
+        faces.push_back({12, 11, 19}); faceColors.push_back(edgeColor);
+        faces.push_back({12, 19, 20}); faceColors.push_back(edgeColor);
+        faces.push_back({13, 12, 20}); faceColors.push_back(edgeColor);
+        faces.push_back({13, 20, 21}); faceColors.push_back(edgeColor);
+        
+        // Left edge
+        faces.push_back({14, 13, 21}); faceColors.push_back(edgeColor);
+        faces.push_back({14, 21, 22}); faceColors.push_back(edgeColor);
+        faces.push_back({15, 14, 22}); faceColors.push_back(edgeColor);
+        faces.push_back({15, 22, 23}); faceColors.push_back(edgeColor);
+        faces.push_back({8, 15, 23}); faceColors.push_back(edgeColor);
+        faces.push_back({8, 23, 16}); faceColors.push_back(edgeColor);
+        
+        // Camera bump faces
+        // Camera ring (cylinder sides)
+        for (int i = 0; i < cam_segments; i++) {
+            int next = (i + 1) % cam_segments;
+            int v1 = 24 + i;
+            int v2 = 24 + next;
+            
+            // Ring to back face
+            faces.push_back({32, v1, v2}); faceColors.push_back(cameraColor);
+            
+            // Ring sides (cylinder)
+            faces.push_back({v1, 33, v2}); faceColors.push_back(cameraColor);
+        }
+        
+        // Camera lens (front face)
+        faces.push_back({33, 24, 25}); faceColors.push_back(lensColor);
+        faces.push_back({33, 25, 26}); faceColors.push_back(lensColor);
+        faces.push_back({33, 26, 27}); faceColors.push_back(lensColor);
+        faces.push_back({33, 27, 28}); faceColors.push_back(lensColor);
+        faces.push_back({33, 28, 29}); faceColors.push_back(lensColor);
+        faces.push_back({33, 29, 30}); faceColors.push_back(lensColor);
+        faces.push_back({33, 30, 31}); faceColors.push_back(lensColor);
+        faces.push_back({33, 31, 24}); faceColors.push_back(lensColor);
     }
     
     void render(Renderer& renderer, const Mat4& modelMatrix, bool wireframe = false) {
@@ -325,14 +436,16 @@ struct Cube {
         
         for (size_t i = 0; i < faces.size(); i++) {
             const auto& face = faces[i];
-            renderer.drawTriangle(
-                vertices[face[0]],
-                vertices[face[1]],
-                vertices[face[2]],
-                mvp,
-                faceColors[i],
-                !wireframe
-            );
+            if (face.size() >= 3) {
+                renderer.drawTriangle(
+                    vertices[face[0]],
+                    vertices[face[1]],
+                    vertices[face[2]],
+                    mvp,
+                    faceColors[i],
+                    !wireframe
+                );
+            }
         }
     }
 };
@@ -467,11 +580,11 @@ public:
 // ============================================================================
 
 int main() {
-    std::cout << "Initializing 3D renderer..." << std::endl;
+    std::cout << "Initializing 3D phone renderer..." << std::endl;
     
     Framebuffer framebuffer(WIDTH, HEIGHT);
     Renderer renderer(framebuffer);
-    Cube cube(2.0f);
+    Phone phone(1.2f, 2.4f, 0.25f);  // Width, Height, Thickness
     VideoEncoder encoder;
     
     if (!encoder.init("output_3d.mp4")) {
@@ -480,31 +593,40 @@ int main() {
     }
     
     std::cout << "Rendering " << TOTAL_FRAMES << " frames..." << std::endl;
+    std::cout << "Phone traveling across screen with 3D rotation!" << std::endl;
     
     for (int frameNum = 0; frameNum < TOTAL_FRAMES; frameNum++) {
         float t = (float)frameNum / (float)TOTAL_FRAMES;
         
-        // Clear framebuffer
-        framebuffer.clear(Color(20, 20, 30));
+        // Clear framebuffer with white background (like original)
+        framebuffer.clear(Color(255, 255, 255));
         
-        // Create transformation matrices
+        // Screen crossing movement (left to right)
+        float screen_width_world = 12.0f;  // World space width
+        float x_pos = -screen_width_world/2 + t * screen_width_world;  // Move left to right
+        
+        // 3D rotation for dynamic effect
         float angle = t * 2.0f * PI;
-        Mat4 rotationX = Mat4::rotationX(angle * 0.7f);
-        Mat4 rotationY = Mat4::rotationY(angle);
-        Mat4 rotationZ = Mat4::rotationZ(angle * 0.3f);
-        Mat4 translation = Mat4::translation(0, 0, -8.0f);
+        Mat4 rotationX = Mat4::rotationX(angle * 0.8f);   // Flip/tumble effect
+        Mat4 rotationY = Mat4::rotationY(angle * 1.2f);   // Spin around vertical axis
+        Mat4 rotationZ = Mat4::rotationZ(angle * 0.4f);   // Roll effect
+        
+        // Position phone in 3D space
+        Mat4 translation = Mat4::translation(x_pos, 0, -8.0f);  // Move across screen, away from camera
         
         // Combine transformations: Translate * RotateZ * RotateY * RotateX
+        // Order matters! We want to rotate first, then translate
         Mat4 modelMatrix = translation * rotationZ * rotationY * rotationX;
         
-        // Render cube
-        cube.render(renderer, modelMatrix, false);
+        // Render phone
+        phone.render(renderer, modelMatrix, false);
         
         // Encode frame
         encoder.writeFrame(framebuffer);
         
         if (frameNum % 10 == 0) {
             std::cout << "Progress: " << frameNum << "/" << TOTAL_FRAMES << " frames" << std::endl;
+            std::cout << "Phone position: " << x_pos << " (screen progression: " << (t * 100.0f) << "%)" << std::endl;
         }
     }
     
@@ -512,7 +634,10 @@ int main() {
     encoder.finish();
     
     std::cout << "Video saved as output_3d.mp4" << std::endl;
-    std::cout << "A 3D cube rotating in all three axes!" << std::endl;
+    std::cout << "✓ 3D phone with proper thickness and depth!" << std::endl;
+    std::cout << "✓ Camera bump visible during rotation!" << std::endl;
+    std::cout << "✓ Rounded edges and realistic proportions!" << std::endl;
+    std::cout << "✓ Traveling across screen with 3D rotation!" << std::endl;
     
     return 0;
 }

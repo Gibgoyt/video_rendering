@@ -17,4 +17,7 @@ clean:
 run: $(TARGET)
 	./$(TARGET)
 
+email:
+	./scripts/email/send.sh
+
 .PHONY: all clean run
